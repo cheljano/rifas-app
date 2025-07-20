@@ -1,4 +1,4 @@
-# -------------------- docker-compose.yml --------------------
+# -------------------- docker-compose.yml (Mejorado) --------------------
 
 version: '3.8'
 
@@ -40,6 +40,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-rifas_db}
       POSTGRES_USER: ${POSTGRES_USER:-user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      # URL del frontend para una configuración de CORS segura
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
     networks:
       - rifas-net
 
@@ -48,10 +50,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Inyecta las URLs como argumentos en el momento de la construcción.
+        # Dentro de la red de Docker, el backend es accesible por su nombre de servicio 'backend'.
+        - REACT_APP_API_URL=http://backend:3000/api
+        - REACT_APP_SOCKET_URL=http://backend:3000
     container_name: rifas_frontend
     restart: unless-stopped
     ports:
-      - "8080:80" # Mapea el puerto 80 del contenedor al 8080 de tu máquina
+      - "8080:80"
     depends_on:
       - backend
     networks:

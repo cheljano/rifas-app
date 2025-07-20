@@ -1,4 +1,4 @@
-/* -------------------- backend/src/server.js -------------------- */
+/* -------------------- backend/src/server.js (Mejorado) -------------------- */
 
 import express from 'express';
 import cors from 'cors';
@@ -9,9 +9,13 @@ import pg from 'pg';
 // --- Configuración Inicial ---
 const app = express();
 const server = http.createServer(app);
+
+// URL del frontend para una configuración de CORS segura
+const frontendURL = process.env.FRONTEND_URL || "http://localhost:8080";
+
 const io = new Server(server, {
   cors: {
-    origin: "*", // En producción, cambiar a la URL del frontend
+    origin: frontendURL,
     methods: ["GET", "POST"]
   }
 });
@@ -85,7 +89,7 @@ const setupDatabase = async () => {
 };
 
 // --- Middlewares de Express ---
-app.use(cors());
+app.use(cors({ origin: frontendURL }));
 app.use(express.json());
 
 // --- Rutas del API (Endpoints) ---
@@ -306,28 +310,3 @@ server.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
   connectWithRetry();
 });
-
-/* -------------------- backend/Dockerfile -------------------- */
-
-# Etapa 1: Instalar dependencias
-FROM node:18-alpine AS deps
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm install
-
-# Etapa 2: Construir la aplicación
-FROM node:18-alpine AS builder
-WORKDIR /usr/src/app
-COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY . .
-
-# Etapa 3: Ejecutar la aplicación
-FROM node:18-alpine
-WORKDIR /usr/src/app
-COPY --from=builder /usr/src/app .
-
-# Exponer el puerto que usa la app
-EXPOSE 3000
-
-# Comando para iniciar el servidor
-CMD ["npm", "start"]
